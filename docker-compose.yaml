@@ -1,0 +1,70 @@
+services:
+  db:
+    image: mysql
+    container_name: mydb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+      MYSQL_DATABASE: sber_db
+    ports:
+      - 3306:3306
+    volumes:
+      - mysql_vol:/var/lib/mysql/
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+
+  create_table:
+    image: kornilovz/first_repo:2
+#    container_name: myscript
+#    image: test:2
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data:ro
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: 'php -r "exit(strpos(file_get_contents(\"http://localhost:8080/\"), \"Adminer\") !== false ? 0 : 1);"'
+
+    depends_on:
+      db:
+        condition: service_healthy
+      create_table:
+        condition: service_completed_successfully
+
+  nifi:
+    image: kornilovz/first_repo:nifi
+    ports:
+      - 8081:8081
+      - 9090:9090
+    environment:
+      - NIFI_WEB_HTTP_PORT=9090
+    depends_on:
+      db:
+        condition: service_healthy
+      create_table:
+        condition: service_completed_successfully
+      adminer:
+        condition: service_healthy
+    volumes:
+      - ./data_json:/tmp/data_json
+#    healthcheck:
+#      test: curl -fi http://localhost:9090 || exit 1
+#      interval: 20s
+#      retries: 5
+#      start_period: 20s
+#      timeout: 10s
+volumes:
+  mysql_vol:
+    name: my_sql_vol
