@@ -19,3 +19,7 @@ docker-compose up
 Для добавления данных в базу необходимо импортировать и запустить группу процессов описанных в NIFI-Flow.json
 
 Примеры json файлов лежат в data_backup. Их необходимо скопировать в папку data_json.
+
+[adminer](http://localhost:8080/)
+[Nifi](http://localhost:9090/nifi/)
+
